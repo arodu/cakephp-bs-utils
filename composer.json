@@ -1,6 +1,6 @@
 {
-    "name": "your-name-here/bs-utils",
-    "description": "BsUtils plugin for CakePHP",
+    "name": "arodu/bs-utils",
+    "description": "Bootstrap Utils plugin for CakePHP",
     "type": "cakephp-plugin",
     "license": "MIT",
     "require": {
