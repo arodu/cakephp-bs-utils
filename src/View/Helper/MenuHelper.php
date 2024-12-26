@@ -108,6 +108,6 @@ class MenuHelper extends Helper
             $class = implode(' ', $class);
         }
 
-        return ' ' . trim($class);
+        return trim($class);
     }
 }
