@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BsUtils\View\Helper;
 
+use Cake\Core\InstanceConfigTrait;
 use Cake\View\Helper;
 use Cake\View\StringTemplateTrait;
 
@@ -13,6 +14,7 @@ use Cake\View\StringTemplateTrait;
 class MenuHelper extends Helper
 {
     use StringTemplateTrait;
+    use InstanceConfigTrait;
 
     /**
      * Default configuration.
@@ -20,73 +22,92 @@ class MenuHelper extends Helper
      * @var array<string, mixed>
      */
     protected array $_defaultConfig = [
-        'menu' => [
-            'class' => 'menu',
+        'nestClass' => 'dropdown',
+        'activeClass' => 'active',
+        'templates' => [
+            'menu' => '<ul class="menu">{{items}}</ul>',
+            'menuItem' => '<li class="{{class}}">{{text}}{{nest}}</li>',
+            'menuLink' => '<a href="{{url}}" class="">{{icon}}<span>{{text}}</span></a>',
+            'nest' => '<ul class="dropdown-menu">{{items}}</ul>',
+            'nestItem' => '<li class="dropdown-item {{class}}">{{text}}{{nest}}</li>',
+            'nestLink' => '<a href="{{url}}" class="">{{icon}}{{text}}</a>',
+            'icon' => '<i class="{{icon}}"></i>',
         ],
-        'item' => [
-            'class' => 'sidebar-item',
-            'linkClass' => 'sidebar-link',
-            'iconClass' => 'bi bi-caret-right-fill',
-            'textClass' => 'sidebar-title',
-        ],
-        'submenu' => [
-            'class' => 'submenu',
-            'itemClass' => 'submenu-item',
-        ],
-        'templates' => [],
     ];
 
-    protected array $helpers = ['Html', 'Url'];
+    protected array $helpers = ['Url'];
 
-    public function initialize(array $config): void
-    {
-        parent::initialize($config);
-    }
+    protected array $activeKeys = [];
 
     public function render(array $menu, array $options = []): string
     {
+        $this->activeKeys = explode('.', $options['activeItem'] ?? '');
         return $this->formatTemplate('menu', [
             'class' => $options['menu.class'] ?? $this->getConfig('menu.class') ?? 'menu',
-            'items' => $this->buildItems($menu, $options),
+            'items' => $this->buildMenuItems($menu, $options),
         ]);
     }
 
-    protected function buildItems(array $items, array $options): string
+    /**
+     * @param array $items
+     * @param array $options
+     * @param int $level
+     * @param bool $isChild
+     * @return string
+     */
+    protected function buildMenuItems(array $items, array $options = [], int $level = 0): string
     {
         $result = '';
-        foreach ($items as $item) {
-            if (isset($item['type']) && $item['type'] === 'title') {
-                $result .= $this->formatTemplate('text', [
-                    'class' => $this->getConfig('textClass') ?? 'sidebar-title',
+        $isChild = $level > 0;
+        $currentActiveKey = $this->activeKeys[$level] ?? null;
+        foreach ($items as $key => $item) {
+            if (isset($item['type']) && $item['type'] === 'title' && !($isChild)) {
+                $result .= $this->formatTemplate('menuItem', [
                     'text' => $item['title'],
                 ]);
                 continue;
             }
 
-            $link = $this->formatTemplate('link', [
+            $template = $isChild ? 'nestLink' : 'menuLink';
+            $link = $this->formatTemplate($template, [
                 'url' => $this->Url->build($item['url'] ?? '#'),
-                'linkClass' => $item['linkClass'] ?? $this->getConfig('item.linkClass') ?? 'sidebar-link',
                 'icon' => !empty($item['icon']) ? $this->formatTemplate('icon', ['icon' => $item['icon']]) : '',
-                'title' => $this->formatTemplate('caption', ['text' => $item['title']]),
+                'text' => $item['title'],
             ]);
 
             $nest = '';
             if (!empty($item['children'])) {
-                $nest = $this->formatTemplate('menu', [
-                    'class' => $this->getConfig('submenuClass') ?? 'submenu',
-                    'items' => $this->buildItems($item['children'], [
-                        'class' => $this->getConfig('submenuItemClass') ?? 'submenu-item',
-                    ]),
+                $nest = $this->formatTemplate('nest', [
+                    'items' => $this->buildMenuItems($item['children'], $options, $level + 1),
                 ]);
             }
 
-            $result .= $this->formatTemplate('item', [
-                'itemClass' => ($item['class'] ?? $options['class'] ?? 'sidebar-item') . (!empty($item['children']) ? ' has-sub' : ''),
-                'link' => $link,
+            $containerTemplate = $isChild ? 'nestItem' : 'menuItem';
+
+            $result .= $this->formatTemplate($containerTemplate, [
+                'class' => $this->cssClass([
+                    $item['class'] ?? null,
+                    !empty($item['children']) ? $this->getConfig('nestClass') : null,
+                    ($currentActiveKey == (string) $key) ? $this->getConfig('activeClass') : null,
+                ]),
+                'text' => $link,
                 'nest' => $nest,
             ]);
         }
 
         return $result;
+    }
+
+    /**
+     * @param string|array $class
+     * @return string
+     */
+    protected function cssClass(string|array $class): string
+    {
+        if (is_array($class)) {
+            $class = implode(' ', $class);
+        }
+
+        return ' ' . trim($class);
     }
 }
