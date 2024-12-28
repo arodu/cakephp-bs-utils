@@ -197,6 +197,7 @@ class MenuHelper extends Helper
             'text' => $item['label'] ?? null,
             'activeClass' => $this->cssClass($isActiveItem ? $options['activeClass'] : null),
             'linkClass' => $this->cssClass($item['link'] ?? null),
+            'append' => $item['append'] ?? null,
         ]);
 
         $nest = null;
