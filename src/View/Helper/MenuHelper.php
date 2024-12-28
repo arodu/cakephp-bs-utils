@@ -27,19 +27,49 @@ class MenuHelper extends Helper
      * @var array<string, mixed>
      */
     protected array $_defaultConfig = [
-        'nestClass' => 'dropdown',
-        'activeClass' => 'active',
+        'menu.class' => 'nav',
+        'dropdown.class' => 'dropdown',
+        'active.class' => 'active',
+
+        /**
+         * Default icon for menu items.
+         * 'defaultIcon' => [
+         *      0 => 'bi bi-circle-fill',
+         *      1 => 'bi bi-circle',
+         *      2 => 'bi bi-record-circle-fill',
+         *      'default' => 'bi bi-circle',
+         * ],
+         */
+        'defaultIcon' => null,
+
+        /**
+         * Class for nested items.
+         */
         'templates' => [
-            'menu' => '<ul class="navbar-nav {{class}}">{{items}}</ul>',
+            /**
+             * Default templates for menu items.
+             */
+            'menuContainer' => '<ul class="{{class}}">{{items}}</ul>',
             'menuItem' => '<li class="nav-item {{class}}">{{text}}{{nest}}</li>',
-            'menuLink' => '<a href="{{url}}" class="nav-link {{class}}{{activeClass}}">{{icon}}{{text}}</a>',
-            'nestMenuLink' => '<a href="{{url}}" class="nav-link dropdown-toggle {{class}}{{activeClass}}" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{icon}}{{text}}</a>',
-            'nest' => '<ul class="dropdown-menu">{{items}}</ul>',
-            'nestItem' => '<li>{{text}}{{nest}}</li>',
-            'nestLink' => '<a href="{{url}}" class="dropdown-item ">{{icon}}{{text}}</a>',
+            'menuItemDisabled' => '<li class="nav-item"><a class="nav-link disabled" aria-disabled="true">{{icon}}{{text}}</a></li>',
+            'menuItemLink' => '<a class="nav-link {{class}}{{activeClass}}" href="{{url}}">{{icon}}{{text}}</a>',
+            'menuItemLinkNest' => '<a class="nav-link dropdown-toggle {{class}}{{activeClass}}" href="{{url}}" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{icon}}{{text}}</a>',
+
+            /**
+             * Default templates for dropdown items.
+             */
+            'dropdownContainer' => '<ul class="dropdown-menu">{{items}}</ul>',
+            'dropdownItem' => '<li>{{text}}{{nest}}</li>',
+            'dropdownItemDisabled' => '<li>{{text}}{{nest}}</li>',
+            'dropdownItemLink' => '<a class="dropdown-item {{activeClass}}" href="{{url}}">{{icon}}{{text}}</a>',
+            'dropdownItemLinkNest' => '<a class="dropdown-item {{activeClass}}" href="{{url}}">{{icon}}{{text}}</a>',
+
+            /**
+             * Default templates for other items.
+             */
             'icon' => '<i class="{{icon}}"></i>',
             'divider' => '<li><hr class="dropdown-divider"></li>',
-            'disabledItem' => '<li class="nav-item"><a class="nav-link disabled" aria-disabled="true">{{icon}}{{text}}</a></li>',
+            'menuTitle' => '<li class="nav-header">{{icon}}{{text}}</li>',
         ],
     ];
 
@@ -55,7 +85,7 @@ class MenuHelper extends Helper
     public function render(array $menu, array $options = []): string
     {
         $this->activeItem($options['activeItem'] ?? '');
-        return $this->formatTemplate('menu', [
+        return $this->formatTemplate('menuContainer', [
             'class' => $options['menu.class'] ?? $this->getConfig('menu.class'),
             'items' => $this->buildMenuItems($menu, $options),
         ]);
@@ -92,8 +122,8 @@ class MenuHelper extends Helper
             }
 
             if (isset($item['type']) && $item['type'] === self::ITEM_TYPE_TITLE && !($isChild)) {
-                $result .= $this->formatTemplate('menuItem', [
-                    'text' => $item['title'],
+                $result .= $this->formatTemplate('menuTitle', [
+                    'text' => $item['label'],
                 ]);
                 continue;
             }
@@ -104,28 +134,35 @@ class MenuHelper extends Helper
             }
 
             if (isset($item['type']) && $item['type'] === self::ITEM_TYPE_DISABLED) {
-                $result .= $this->formatTemplate('disabledItem', [
-                    'text' => $item['title'],
+                $disabledItem = $isChild ? 'dropdownItemDisabled' : 'menuItemDisabled';
+                $result .= $this->formatTemplate($disabledItem, [
+                    'text' => $item['label'],
                 ]);
                 continue;
             }
 
-            $template = $isChild ? 'nestLink' : 'menuLink';
-            $template = $item['children'] ?? null ? 'nestMenuLink' : $template;
+            $item['icon'] = $item['icon']
+                ?? $this->getConfig('defaultIcon')[$level]
+                ?? $this->getConfig('defaultIcon')['default']
+                ?? $this->getConfig('defaultIcon')
+                ?? null;
+            $itemLink = $isChild ? 'dropdownItemLink' : 'menuItemLink';
+            $itemLinkNest = $isChild ? 'dropdownItemLinkNest' : 'menuItemLinkNest';
+            $template = empty($item['children']) ? $itemLink : $itemLinkNest;
             $link = $this->formatTemplate($template, [
                 'url' => $this->Url->build($item['url'] ?? '#'),
                 'icon' => !empty($item['icon']) ? $this->formatTemplate('icon', ['icon' => $item['icon']]) : '',
-                'text' => $item['title'],
+                'text' => $item['label'],
             ]);
 
             $nest = '';
             if (!empty($item['children'])) {
-                $nest = $this->formatTemplate('nest', [
+                $nest = $this->formatTemplate('dropdownContainer', [
                     'items' => $this->buildMenuItems($item['children'], $options, $level + 1),
                 ]);
             }
 
-            $containerTemplate = $isChild ? 'nestItem' : 'menuItem';
+            $containerTemplate = $isChild ? 'dropdownItem' : 'menuItem';
             $result .= $this->formatTemplate($containerTemplate, [
                 'class' => $this->cssClass([
                     $item['class'] ?? null,
