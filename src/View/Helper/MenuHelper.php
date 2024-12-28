@@ -60,19 +60,19 @@ class MenuHelper extends Helper
              * Default templates for menu items.
              */
             'menuContainer' => '<ul class="{{menuClass}}">{{items}}</ul>',
-            'menuItem' => '<li class="nav-item{{class}}{{dropdownClass}}">{{text}}{{nest}}</li>',
-            'menuItemDisabled' => '<li class="nav-item{{class}}"><a class="nav-link disabled" aria-disabled="true">{{icon}}{{text}}</a></li>',
-            'menuItemLink' => '<a class="nav-link{{linkClass}}{{activeClass}}" href="{{url}}">{{icon}}{{text}}</a>',
-            'menuItemLinkNest' => '<a class="nav-link dropdown-toggle{{linkClass}}{{activeClass}}" href="{{url}}" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{icon}}{{text}}</a>',
+            'menuItem' => '<li class="nav-item{{class}}{{dropdownClass}}"{{attrs}}>{{text}}{{nest}}</li>',
+            'menuItemDisabled' => '<li class="nav-item{{class}}"><a class="nav-link disabled" aria-disabled="true"{{attrs}}>{{icon}}{{text}}</a></li>',
+            'menuItemLink' => '<a class="nav-link{{linkClass}}{{activeClass}}" href="{{url}}"{{attrs}}>{{icon}}{{text}}</a>',
+            'menuItemLinkNest' => '<a class="nav-link dropdown-toggle{{linkClass}}{{activeClass}}" href="{{url}}" role="button" data-bs-toggle="dropdown" aria-expanded="false"{{attrs}}>{{icon}}{{text}}</a>',
 
             /**
              * Default templates for dropdown items.
              */
             'dropdownContainer' => '<ul class="dropdown-menu">{{items}}</ul>',
-            'dropdownItem' => '<li>{{text}}{{nest}}</li>',
-            'dropdownItemDisabled' => '<li>{{text}}{{nest}}</li>',
-            'dropdownItemLink' => '<a class="dropdown-item{{linkClass}}{{activeClass}}" href="{{url}}">{{icon}}{{text}}</a>',
-            'dropdownItemLinkNest' => '<a class="dropdown-item{{linkClass}}{{activeClass}}" href="{{url}}">{{icon}}{{text}}</a>',
+            'dropdownItem' => '<li{{attrs}}>{{text}}{{nest}}</li>',
+            'dropdownItemDisabled' => '<li{{attrs}}>{{text}}{{nest}}</li>',
+            'dropdownItemLink' => '<a class="dropdown-item{{linkClass}}{{activeClass}}" href="{{url}}"{{attrs}}>{{icon}}{{text}}</a>',
+            'dropdownItemLinkNest' => '<a class="dropdown-item{{linkClass}}{{activeClass}}" href="{{url}}"{{attrs}}>{{icon}}{{text}}</a>',
 
             /**
              * Default templates for other items.
@@ -198,6 +198,7 @@ class MenuHelper extends Helper
             'activeClass' => $this->cssClass($isActiveItem ? $options['activeClass'] : null),
             'linkClass' => $this->cssClass($item['link'] ?? null),
             'append' => $item['append'] ?? null,
+            'attrs' => $this->templater()->formatAttributes($item ?? [], ['url', 'label', 'icon', 'append', 'container', 'children', 'key', 'type', 'show', 'active', 'disabled']),
         ]);
 
         $nest = null;
@@ -208,13 +209,15 @@ class MenuHelper extends Helper
         }
 
         $containerTemplate = $isChild ? 'dropdownItem' : 'menuItem';
+
         return $this->formatTemplate($containerTemplate, [
-            'class' => $this->cssClass($item['class'] ?? null),
+            'class' => $this->cssClass($item['container']['class'] ?? null),
             'activeClass' => $this->cssClass($isActiveItem ? $options['activeClass'] : null),
             'dropdownClass' => $this->cssClass(!empty($item['children']) ? $options['dropdownClass'] : null),
             'dropdownOpenClass' => $this->cssClass($isActiveItem ? $options['dropdownOpenClass'] : null),
             'text' => $link,
             'nest' => $nest ?? null,
+            'attrs' => $this->templater()->formatAttributes($item['container'] ?? [], ['url', 'label', 'icon', 'append', 'children']),
         ]);
     }
 
