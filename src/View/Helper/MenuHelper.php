@@ -27,9 +27,9 @@ class MenuHelper extends Helper
      * @var array<string, mixed>
      */
     protected array $_defaultConfig = [
-        'menu.class' => 'nav',
-        'dropdown.class' => 'dropdown',
-        'active.class' => 'active',
+        'menuClass' => 'nav',
+        'dropdownClass' => 'dropdown',
+        'activeClass' => 'active',
 
         /**
          * Default icon for menu items.
@@ -49,11 +49,11 @@ class MenuHelper extends Helper
             /**
              * Default templates for menu items.
              */
-            'menuContainer' => '<ul class="{{class}}">{{items}}</ul>',
-            'menuItem' => '<li class="nav-item {{class}}">{{text}}{{nest}}</li>',
-            'menuItemDisabled' => '<li class="nav-item"><a class="nav-link disabled" aria-disabled="true">{{icon}}{{text}}</a></li>',
-            'menuItemLink' => '<a class="nav-link {{class}}{{activeClass}}" href="{{url}}">{{icon}}{{text}}</a>',
-            'menuItemLinkNest' => '<a class="nav-link dropdown-toggle {{class}}{{activeClass}}" href="{{url}}" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{icon}}{{text}}</a>',
+            'menuContainer' => '<ul class="{{menuClass}}">{{items}}</ul>',
+            'menuItem' => '<li class="nav-item{{class}}{{dropdownClass}}">{{text}}{{nest}}</li>',
+            'menuItemDisabled' => '<li class="nav-item{{class}}"><a class="nav-link disabled" aria-disabled="true">{{icon}}{{text}}</a></li>',
+            'menuItemLink' => '<a class="nav-link{{linkClass}}{{activeClass}}" href="{{url}}">{{icon}}{{text}}</a>',
+            'menuItemLinkNest' => '<a class="nav-link dropdown-toggle{{linkClass}}{{activeClass}}" href="{{url}}" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{icon}}{{text}}</a>',
 
             /**
              * Default templates for dropdown items.
@@ -61,8 +61,8 @@ class MenuHelper extends Helper
             'dropdownContainer' => '<ul class="dropdown-menu">{{items}}</ul>',
             'dropdownItem' => '<li>{{text}}{{nest}}</li>',
             'dropdownItemDisabled' => '<li>{{text}}{{nest}}</li>',
-            'dropdownItemLink' => '<a class="dropdown-item {{activeClass}}" href="{{url}}">{{icon}}{{text}}</a>',
-            'dropdownItemLinkNest' => '<a class="dropdown-item {{activeClass}}" href="{{url}}">{{icon}}{{text}}</a>',
+            'dropdownItemLink' => '<a class="dropdown-item{{linkClass}}{{activeClass}}" href="{{url}}">{{icon}}{{text}}</a>',
+            'dropdownItemLinkNest' => '<a class="dropdown-item{{linkClass}}{{activeClass}}" href="{{url}}">{{icon}}{{text}}</a>',
 
             /**
              * Default templates for other items.
@@ -73,8 +73,14 @@ class MenuHelper extends Helper
         ],
     ];
 
+    /**
+     * @var array
+     */
     protected array $helpers = ['Url'];
 
+    /**
+     * @var array
+     */
     protected array $activeKeys = [];
 
     /**
@@ -84,9 +90,12 @@ class MenuHelper extends Helper
      */
     public function render(array $menu, array $options = []): string
     {
-        $this->activeItem($options['activeItem'] ?? '');
+        if (isset($options['activeItem'])) {
+            $this->activeItem($options['activeItem']);
+        }
+
         return $this->formatTemplate('menuContainer', [
-            'class' => $options['menu.class'] ?? $this->getConfig('menu.class'),
+            'menuClass' => $options['menuClass'] ?? $this->getConfig('menuClass'),
             'items' => $this->buildMenuItems($menu, $options),
         ]);
     }
@@ -141,6 +150,9 @@ class MenuHelper extends Helper
                 continue;
             }
 
+            $hasChildren = !empty($item['children']);
+            $isActiveItem = $currentActiveKey == (string) $key;
+
             $item['icon'] = $item['icon']
                 ?? $this->getConfig('defaultIcon')[$level]
                 ?? $this->getConfig('defaultIcon')['default']
@@ -148,15 +160,17 @@ class MenuHelper extends Helper
                 ?? null;
             $itemLink = $isChild ? 'dropdownItemLink' : 'menuItemLink';
             $itemLinkNest = $isChild ? 'dropdownItemLinkNest' : 'menuItemLinkNest';
-            $template = empty($item['children']) ? $itemLink : $itemLinkNest;
+            $template = $hasChildren ? $itemLinkNest : $itemLink;
             $link = $this->formatTemplate($template, [
                 'url' => $this->Url->build($item['url'] ?? '#'),
                 'icon' => !empty($item['icon']) ? $this->formatTemplate('icon', ['icon' => $item['icon']]) : '',
                 'text' => $item['label'],
+                'activeClass' => $this->cssClass($isActiveItem ? $this->getConfig('activeClass') : null),
+                'linkClass' => $this->cssClass($item['link'] ?? null),
             ]);
 
             $nest = '';
-            if (!empty($item['children'])) {
+            if ($hasChildren) {
                 $nest = $this->formatTemplate('dropdownContainer', [
                     'items' => $this->buildMenuItems($item['children'], $options, $level + 1),
                 ]);
@@ -164,11 +178,9 @@ class MenuHelper extends Helper
 
             $containerTemplate = $isChild ? 'dropdownItem' : 'menuItem';
             $result .= $this->formatTemplate($containerTemplate, [
-                'class' => $this->cssClass([
-                    $item['class'] ?? null,
-                    !empty($item['children']) ? $this->getConfig('nestClass') : null,
-                    ($currentActiveKey == (string) $key) ? $this->getConfig('activeClass') : null,
-                ]),
+                'class' => $this->cssClass($item['class'] ?? null),
+                'activeClass' => $this->cssClass($isActiveItem ? $this->getConfig('activeClass') : null),
+                'dropdownClass' => $this->cssClass($hasChildren ? $this->getConfig('dropdownClass') : null),
                 'text' => $link,
                 'nest' => $nest,
             ]);
@@ -181,12 +193,16 @@ class MenuHelper extends Helper
      * @param string|array $class
      * @return string
      */
-    protected function cssClass(string|array $class): string
+    protected function cssClass(string|array|null $class): string
     {
         if (is_array($class)) {
             $class = implode(' ', $class);
         }
 
-        return trim($class);
+        if (!empty($class)) {
+            return ' ' . trim($class);
+        }
+        
+        return '';
     }
 }
