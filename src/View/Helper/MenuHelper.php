@@ -10,7 +10,16 @@ use Cake\View\Helper;
 use Cake\View\StringTemplateTrait;
 
 /**
- * Menu helper
+ * MenuHelper class for rendering dynamic navigation menus with support for nested items, dropdowns, and active states.
+ *
+ * This helper allows the creation of customizable navigation menus using configurable templates and options.
+ * Features include:
+ * - Nested menu items with dropdown support.
+ * - Conditional rendering based on visibility or disabled states.
+ * - Customizable templates for flexible styling.
+ * - Active state management for highlighting menu items.
+ * 
+ * @property \Cake\View\Helper\UrlHelper $Url
  */
 class MenuHelper extends Helper
 {
@@ -19,7 +28,6 @@ class MenuHelper extends Helper
 
     const ITEM_TYPE_LINK = 'link';
     const ITEM_TYPE_DIVIDER = 'divider';
-    const ITEM_TYPE_DISABLED = 'disabled';
     const ITEM_TYPE_TITLE = 'title';
 
     /**
@@ -81,14 +89,16 @@ class MenuHelper extends Helper
     protected array $helpers = ['Url'];
 
     /**
-     * @var array
+     * @var array Keys representing the active menu item hierarchy.
      */
     protected array $activeKeys = [];
 
     /**
-     * @param array $items
-     * @param array $options
-     * @return string
+     * Renders a menu based on the provided items and options.
+     *
+     * @param array $items The menu items to render.
+     * @param array $options Configuration options to customize rendering.
+     * @return string The rendered menu HTML.
      */
     public function render(array $items, array $options = []): string
     {
@@ -109,7 +119,9 @@ class MenuHelper extends Helper
     }
 
     /**
-     * @param string $keys
+     * Sets the active menu item by specifying its hierarchical keys.
+     *
+     * @param string $keys Dot-separated keys representing the active item path.
      * @return void
      */
     public function activeItem(string $keys): void
@@ -118,10 +130,12 @@ class MenuHelper extends Helper
     }
 
     /**
-     * @param array $items
-     * @param array $options
-     * @param integer $level
-     * @return string
+     * Recursively builds menu items based on the given configuration.
+     *
+     * @param array $items The menu items to process.
+     * @param array $options Configuration options for rendering.
+     * @param int $level The current menu depth level (default is 0).
+     * @return string The rendered menu items as HTML.
      */
     protected function buildMenuItems(array $items, array $options, int $level = 0): string
     {
@@ -138,10 +152,12 @@ class MenuHelper extends Helper
     }
 
     /**
-     * @param array $item
-     * @param array $options
-     * @param integer $level
-     * @return string
+     * Builds an individual menu item, including handling nested children and active states.
+     *
+     * @param array $item The menu item configuration.
+     * @param array $options Configuration options for rendering.
+     * @param int $level The current menu depth level.
+     * @return string The rendered menu item as HTML.
      */
     protected function buildMenuItem(array $item, array $options, int $level): string
     {
@@ -202,8 +218,10 @@ class MenuHelper extends Helper
     }
 
     /**
-     * @param array $item
-     * @return boolean
+     * Determines if a menu item should be shown based on its configuration.
+     *
+     * @param array $item The menu item configuration.
+     * @return bool True if the item should be displayed, false otherwise.
      */
     protected function itemShow(array $item): bool
     {
@@ -219,19 +237,18 @@ class MenuHelper extends Helper
     }
 
     /**
-     * @param array $item
-     * @return boolean
+     * Determines if a menu item should be displayed as disabled based on its configuration.
+     *
+     * @param array $item The menu item configuration.
+     * @return bool True if the item should be disabled, false otherwise.
      */
     protected function itemDisabled(array $item): bool
     {
-        if (isset($item['type']) && $item['type'] === self::ITEM_TYPE_DISABLED) {
+        if (isset($item['disabled']) && $item['disabled'] === true) {
             return true;
         }
 
-        if (isset($item['disabled']) && (
-            $item['disabled'] === true ||
-            (is_callable($item['disabled']) && $item['disabled']())
-        )) {
+        if (isset($item['disabled']) && is_callable($item['disabled'] && $item['disabled']())) {
             return true;
         }
 
@@ -239,9 +256,11 @@ class MenuHelper extends Helper
     }
 
     /**
-     * @param array $item
-     * @param integer $level
-     * @return boolean
+     * Checks if a menu item is the currently active item.
+     *
+     * @param array $item The menu item configuration.
+     * @param int $level The current menu depth level.
+     * @return bool True if the item is active, false otherwise.
      */
     protected function isActiveItem(array $item, int $level): bool
     {
@@ -262,8 +281,10 @@ class MenuHelper extends Helper
     }
 
     /**
-     * @param string|array $class
-     * @return string
+     * Converts a CSS class or array of classes into a properly formatted string.
+     *
+     * @param string|array|null $class The CSS class or array of classes.
+     * @return string The formatted class string, prefixed with a space if not empty.
      */
     protected function cssClass(string|array|null $class): string
     {
