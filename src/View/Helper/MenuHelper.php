@@ -30,6 +30,7 @@ class MenuHelper extends Helper
         'menuClass' => 'nav',
         'dropdownClass' => 'dropdown',
         'activeClass' => 'active',
+        'dropdownOpenClass' => 'dropdown-open',
 
         /**
          * Default icon for menu items.
@@ -92,6 +93,10 @@ class MenuHelper extends Helper
     {
         if (isset($options['activeItem'])) {
             $this->activeItem($options['activeItem']);
+        }
+
+        if (isset($options['templates'])) {
+            $this->setTemplates($options['templates']);
         }
 
         return $this->formatTemplate('menuContainer', [
@@ -181,6 +186,7 @@ class MenuHelper extends Helper
                 'class' => $this->cssClass($item['class'] ?? null),
                 'activeClass' => $this->cssClass($isActiveItem ? $this->getConfig('activeClass') : null),
                 'dropdownClass' => $this->cssClass($hasChildren ? $this->getConfig('dropdownClass') : null),
+                'dropdownOpenClass' => $this->cssClass($isActiveItem ? $this->getConfig('dropdownOpenClass') : null),
                 'text' => $link,
                 'nest' => $nest,
             ]);
