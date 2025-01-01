@@ -184,7 +184,7 @@ class MenuHelper extends Helper
 
         $isActiveItem = $this->isActiveItem($item, $level);
         $item['icon'] = $item['icon']
-            ?? is_string($options['defaultIcon']) ? $options['defaultIcon'] : null
+            ?? (is_string($options['defaultIcon']) ? $options['defaultIcon'] : null)
             ?? $options['defaultIcon'][$level]
             ?? $options['defaultIcon']['default']
             ?? null;
