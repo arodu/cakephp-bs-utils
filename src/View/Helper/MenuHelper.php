@@ -113,7 +113,7 @@ class MenuHelper extends Helper
         }
 
         return $this->formatTemplate('menuContainer', [
-            'menuClass' => $options['menuClass'] ?? null,
+            'menuClass' => $options['class'] ?? $options['menuClass'] ?? null,
             'items' => $this->buildMenuItems($items, $options),
         ]);
     }
