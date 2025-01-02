@@ -5,6 +5,6 @@ namespace BsUtils\Utility;
 
 interface BadgeInterface
 {
-    public function label(): string;
+    public function text(): string;
     public function color(): string;
 }

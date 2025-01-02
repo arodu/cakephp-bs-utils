@@ -36,7 +36,7 @@ class BsHelper extends Helper
     {
         return $this->Html->tag(
             'span',
-            $badge->label(),
+            $badge->text(),
             [
                 'class' => implode(' ', [
                     'badge',
