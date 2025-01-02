@@ -5,5 +5,5 @@ namespace BsUtils\Utility;
 
 interface ColorInterface
 {
-    public function __toString(): string;
+    public function value(): string;
 }

@@ -16,7 +16,7 @@ enum Color: string implements ColorInterface
     case Light = 'light';
     case Dark = 'dark';
 
-    public function __toString()
+    public function value(): string
     {
         return $this->value;
     }

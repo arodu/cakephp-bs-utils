@@ -150,14 +150,4 @@ class BsHelper extends Helper
 
         return $this->Menu->render($items, $options);
     }
-
-    public function class(string $type = 'text', ColorInterface $color): string
-    {
-        $doubles = ['bg', 'btn', 'alert'];
-        if (in_array($type, $doubles)) {
-            return $type . ' ' . $type . '-' . $color;
-        }
-
-        return $doubles[$type] . '-' . $color;
-    }
 }
