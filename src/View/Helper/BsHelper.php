@@ -14,11 +14,11 @@ use Cake\View\View;
  */
 class BsHelper extends Helper
 {
-    const TYPE_BG = 'bg';
-    const TYPE_BTN = 'btn';
-    const TYPE_TEXT = 'text';
-    const TYPE_CARD = 'card';
-    const TYPE_BORDER = 'border';
+    const CLASS_BG = 'bg';
+    const CLASS_BTN = 'btn';
+    const CLASS_TEXT = 'text';
+    const CLASS_CARD = 'card';
+    const CLASS_BORDER = 'border';
 
     const BADGE_DEFAULT = 'badge';
     const BADGE_PILL = 'badge-pill';
