@@ -6,6 +6,7 @@ namespace BsUtils\View\Helper;
 
 use BsUtils\Utility\BadgeInterface;
 use BsUtils\Utility\ColorInterface;
+use Cake\Utility\Hash;
 use Cake\View\Helper;
 use Cake\View\View;
 
@@ -32,26 +33,44 @@ class BsHelper extends Helper
 
     protected array $helpers = ['Html', 'BsUtils.Menu'];
 
-    public function badge(BadgeInterface $badge, string $type = self::BADGE_DEFAULT)
+    /**
+     * ### Options
+     * - `class`: Additional classes to add to the badge.
+     * - `tag`: The HTML tag to use for the badge. Default `span`.
+     *
+     * @param \Cake\View\View $View The View this helper is being attached to.
+     * @param array $config Configuration settings for the helper.
+     */
+    public function badge(BadgeInterface $badge, array $options = [])
     {
-        return $this->Html->tag(
-            'span',
-            $badge->text(),
-            [
-                'class' => implode(' ', [
-                    'badge',
-                    'text-bg-' . $badge->color(),
-                    $type === self::BADGE_PILL ? 'rounded-pill' : '',
-                ]),
-            ]
-        );
+        $options = Hash::merge([
+            'class' => 'text-bg-' . $badge->color(),
+        ], $options);
+
+        return $this->Html->badge($badge->text(), $options);
     }
 
-    public function badgePill(BadgeInterface $badge)
+    /**
+     * ### Options
+     * - `class`: Additional classes to add to the badge.
+     *
+     * @param \BsUtils\Utility\BadgeInterface $badge
+     * @param array $options
+     * @return string
+     */
+    public function badgePill(BadgeInterface $badge, array $options = [])
     {
-        return $this->badge($badge, self::BADGE_PILL);
+        return $this->badge($badge, Hash::merge($options, ['class' => 'badge-pill']));
     }
 
+    /**
+     * ### Options
+     * - `class`: Additional classes to add to the badge.
+     *
+     * @param \BsUtils\Utility\BadgeInterface $badge
+     * @param array $options
+     * @return string
+     */
     public function alert(string $message, ColorInterface $color, array $options = [])
     {
         if (isset($options['dismissible']) && $options['dismissible']) {
@@ -77,6 +96,21 @@ class BsHelper extends Helper
         );
     }
 
+    /**
+     * Undocumented function
+     *
+     * ### Options
+     * `tag`: The HTML tag to use for the badge. Default `span`.
+     * `class`: Additional classes to add to the badge.
+     * 'striped': Add striped class to the progress bar.
+     * 'animated': Add animated class to the progress bar.
+     * 
+     * @param integer $value
+     * @param integer $max
+     * @param ColorInterface|string|null $color
+     * @param array $options
+     * @return void
+     */
     public function progress(int $value, int $max = 100, ColorInterface|string $color = null, array $options = [])
     {
         $options += [
@@ -92,24 +126,16 @@ class BsHelper extends Helper
             $classes[] = 'progress-bar-animated';
         }
 
-        return $this->Html->tag(
-            'div',
-            $this->Html->tag(
-                'div',
-                null,
-                [
-                    'class' => implode(' ', $classes),
-                    'role' => 'progressbar',
-                    'style' => 'width: ' . ($value / $max * 100) . '%',
-                    'aria-valuenow' => $value,
-                    'aria-valuemin' => 0,
-                    'aria-valuemax' => $max,
-                ]
-            ),
-            [
-                'class' => 'progress',
-            ]
-        );
+        $progressbar = $this->Html->tag('div', null, [
+            'class' => implode(' ', $classes),
+            'role' => 'progressbar',
+            'style' => 'width: ' . ($value / $max * 100) . '%',
+            'aria-valuenow' => $value,
+            'aria-valuemin' => 0,
+            'aria-valuemax' => $max,
+        ]);
+
+        return $this->Html->tag('div', $progressbar, ['class' => 'progress']);
     }
 
     public function spinner(ColorInterface|string $color = null, array $options = [])

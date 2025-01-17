@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace BsUtils\View\Helper;
 
 use Cake\Core\InstanceConfigTrait;
+use Cake\Routing\Router;
 use Cake\Utility\Hash;
 use Cake\View\Helper;
 use Cake\View\StringTemplateTrait;
@@ -18,8 +19,6 @@ use Cake\View\StringTemplateTrait;
  * - Conditional rendering based on visibility or disabled states.
  * - Customizable templates for flexible styling.
  * - Active state management for highlighting menu items.
- * 
- * @property \Cake\View\Helper\UrlHelper $Url
  */
 class MenuHelper extends Helper
 {
@@ -64,6 +63,7 @@ class MenuHelper extends Helper
             'menuItemDisabled' => '<li class="nav-item{{class}}"><a class="nav-link disabled" aria-disabled="true"{{attrs}}>{{icon}}{{text}}</a></li>',
             'menuItemLink' => '<a class="nav-link{{linkClass}}{{activeClass}}" href="{{url}}"{{attrs}}>{{icon}}{{text}}</a>',
             'menuItemLinkNest' => '<a class="nav-link dropdown-toggle{{linkClass}}{{activeClass}}" href="{{url}}" role="button" data-bs-toggle="dropdown" aria-expanded="false"{{attrs}}>{{icon}}{{text}}</a>',
+            'menuItemDivider' => '<li><hr class="dropdown-divider"></li>',
 
             /**
              * Default templates for dropdown items.
@@ -73,20 +73,15 @@ class MenuHelper extends Helper
             'dropdownItemDisabled' => '<li{{attrs}}>{{text}}{{nest}}</li>',
             'dropdownItemLink' => '<a class="dropdown-item{{linkClass}}{{activeClass}}" href="{{url}}"{{attrs}}>{{icon}}{{text}}</a>',
             'dropdownItemLinkNest' => '<a class="dropdown-item{{linkClass}}{{activeClass}}" href="{{url}}"{{attrs}}>{{icon}}{{text}}</a>',
+            'dropdownItemDivider' => '<li><hr class="dropdown-divider"></li>',
 
             /**
              * Default templates for other items.
              */
             'icon' => '<i class="{{icon}}"></i>',
-            'divider' => '<li><hr class="dropdown-divider"></li>',
             'menuTitle' => '<li class="nav-header">{{icon}}{{text}}</li>',
         ],
     ];
-
-    /**
-     * @var array
-     */
-    protected array $helpers = ['Url'];
 
     /**
      * @var array Keys representing the active menu item hierarchy.
@@ -172,13 +167,17 @@ class MenuHelper extends Helper
         }
 
         if ($item['type'] === self::ITEM_TYPE_DIVIDER) {
-            return $this->formatTemplate('divider', []);
+            $dividerTemplate = $isChild ? 'dropdownItemDivider' : 'menuItemDivider';
+            return $this->formatTemplate($dividerTemplate, []);
         }
 
         if ($this->itemDisabled($item)) {
-            $disabledItem = $isChild ? 'dropdownItemDisabled' : 'menuItemDisabled';
-            return $this->formatTemplate($disabledItem, [
-                'text' => $item['label'],
+            $itemDisabledTemplate = $isChild ? 'dropdownItemDisabled' : 'menuItemDisabled';
+            return $this->formatTemplate($itemDisabledTemplate, [
+                'text' => $item['label'] ?? null,
+                'class' => $this->cssClass($item['container']['class'] ?? null),
+                'icon' => !empty($item['icon']) ? $this->formatTemplate('icon', ['icon' => $item['icon']]) : null,
+                'attrs' => $this->templater()->formatAttributes($item['container'] ?? [], ['url', 'label', 'icon', 'append', 'children']),
             ]);
         }
 
@@ -190,9 +189,9 @@ class MenuHelper extends Helper
             ?? null;
         $itemLink = $isChild ? 'dropdownItemLink' : 'menuItemLink';
         $itemLinkNest = $isChild ? 'dropdownItemLinkNest' : 'menuItemLinkNest';
-        $template = $hasChildren ? $itemLinkNest : $itemLink;
-        $link = $this->formatTemplate($template, [
-            'url' => $this->Url->build($item['url'] ?? '#'),
+        $itemLinkTemplate = $hasChildren ? $itemLinkNest : $itemLink;
+        $link = $this->formatTemplate($itemLinkTemplate, [
+            'url' => Router::url($item['url'] ?? '#'),
             'icon' => !empty($item['icon']) ? $this->formatTemplate('icon', ['icon' => $item['icon']]) : null,
             'text' => $item['label'] ?? null,
             'activeClass' => $this->cssClass($isActiveItem ? $options['activeClass'] : null),
@@ -252,7 +251,7 @@ class MenuHelper extends Helper
             return true;
         }
 
-        if (isset($item['disabled']) && is_callable($item['disabled'] && $item['disabled']())) {
+        if (isset($item['disabled']) && is_callable($item['disabled'] && $item['disabled']($this->getView()->getRequest()))) {
             return true;
         }
 
