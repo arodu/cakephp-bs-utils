@@ -181,6 +181,11 @@ class MenuHelper extends Helper
             ]);
         }
 
+        $append = $item['append'] ?? null;
+        if (!empty($append) && is_callable($append)) {
+            $append = $append($item);
+        }
+
         $isActiveItem = $this->isActiveItem($item, $level);
         $item['icon'] = $item['icon']
             ?? (is_string($options['defaultIcon']) ? $options['defaultIcon'] : null)
@@ -196,7 +201,7 @@ class MenuHelper extends Helper
             'text' => $item['label'] ?? null,
             'activeClass' => $this->cssClass($isActiveItem ? $options['activeClass'] : null),
             'linkClass' => $this->cssClass($item['link'] ?? null),
-            'append' => $item['append'] ?? null,
+            'append' => $append,
             'attrs' => $this->templater()->formatAttributes($item ?? [], ['url', 'label', 'icon', 'append', 'container', 'children', 'key', 'type', 'show', 'active', 'disabled']),
         ]);
 
