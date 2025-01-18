@@ -256,7 +256,7 @@ class MenuHelper extends Helper
             return true;
         }
 
-        if (isset($item['disabled']) && is_callable($item['disabled'] && $item['disabled']($this->getView()->getRequest()))) {
+        if (isset($item['disabled']) && is_callable($item['disabled']) && $item['disabled']($this->getView()->getRequest())) {
             return true;
         }
 
