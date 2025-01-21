@@ -68,12 +68,12 @@ class BsHelper extends Helper
     {
         $visualElement = $this->visualElement($visualElement);
         $options += ['class' => 'badge'];
-        $options['class'] .= ' bg-' . ($visualElement->getColor() ?? $this->getConfig('defaultColor') ?? 'secondary');
+        $options['class'] .= ' text-bg-' . ($visualElement->getColor() ?? $this->getConfig('defaultColor') ?? 'secondary');
         $options['title'] = $visualElement->getDescription() ?? $visualElement->getLabel() ?? null;
         $options['aria-label'] = $visualElement->getLabel() ?? '';
 
         if ($options['pill'] ?? $this->getConfig('defaultPill') ?? false) {
-            $options['class'] .= ' badge-pill';
+            $options['class'] .= ' rounded-pill';
         }
 
         if ($options['tooltip'] ?? $this->getConfig('defaultTooltip') ?? false) {
@@ -81,12 +81,7 @@ class BsHelper extends Helper
             unset($options['tooltip']);
         }
 
-        $icon = '';
-        if ($options['icon'] ?? $this->getConfig('defaultIcon') ?? false) {
-            $icon = $this->Html->tag('i', '', [
-                'class' => 'me-1 bi bi-' . ($visualElement->getIcon() ?? $options['icon'] ?? $this->getConfig('defaultIcon') ?? 'circle-fill')
-            ]);
-        }
+        $icon = $this->renderIcon($visualElement, $options);
 
         return $this->Html->tag('span', $icon . $visualElement->getLabel(), $options);
     }
@@ -107,12 +102,7 @@ class BsHelper extends Helper
             unset($options['tooltip']);
         }
 
-        $icon = '';
-        if ($options['icon'] ?? $this->getConfig('defaultIcon') ?? false) {
-            $icon = $this->Html->tag('i', '', [
-                'class' => 'me-1 bi bi-' . ($visualElement->getIcon() ?? $options['icon'] ?? $this->getConfig('defaultIcon') ?? 'circle-fill')
-            ]);
-        }
+        $icon = $this->renderIcon($visualElement, $options);
 
         return $this->Html->tag('span', $icon . $visualElement->getLabel(), $options);
     }
@@ -129,12 +119,7 @@ class BsHelper extends Helper
         $options['class'] .= ' alert-' . ($visualElement->getColor() ?? $this->getConfig('defaultColor') ?? 'secondary');
         $options['title'] = $visualElement->getDescription() ?? $visualElement->getLabel() ?? null;
 
-        $icon = '';
-        if ($options['icon'] ?? $this->getConfig('defaultIcon') ?? false) {
-            $icon = $this->Html->tag('i', '', [
-                'class' => 'me-1 bi bi-' . ($visualElement->getIcon() ?? $options['icon'] ?? $this->getConfig('defaultIcon') ?? 'circle-fill')
-            ]);
-        }
+        $icon = $this->renderIcon($visualElement, $options);
 
         $closeButton = '';
         if (isset($options['dismissible']) && $options['dismissible']) {
@@ -177,6 +162,24 @@ class BsHelper extends Helper
         return $this->Html->tag('i', '', $options);
     }
 
+    public function button(VisualElementInterface|array $visualElement, array $options = []): string
+    {
+        $visualElement = $this->visualElement($visualElement);
+        $options += ['class' => 'btn'];
+        $options['class'] .= ' btn-' . ($visualElement->getColor() ?? $this->getConfig('defaultColor') ?? 'secondary');
+        $options['title'] = $visualElement->getDescription() ?? $visualElement->getLabel() ?? '';
+
+        if ($options['tooltip'] ?? $this->getConfig('defaultTooltip') ?? false) {
+            $options = $this->tooltipOptions($visualElement, $options);
+            unset($options['tooltip']);
+        }
+
+        $icon = $this->renderIcon($visualElement, $options);
+        $label = $visualElement->getLabel();
+
+        return $this->Html->link($icon . $label, $options['url'] ?? '#', $options);
+    }
+
     /**
      * @param array<string> $tags
      * @param array $options
@@ -212,9 +215,11 @@ class BsHelper extends Helper
 
     protected function renderIcon(VisualElement $visualElement, array $options): string
     {
+        // @todo check wath is flex-shrink-0 and me-2
+
         if ($options['icon'] ?? $this->getConfig('defaultIcon') ?? false) {
             return $this->Html->tag('i', '', [
-                'class' => 'me-1 bi bi-' . ($visualElement->getIcon() ?? $options['icon'] ?? $this->getConfig('defaultIcon') ?? 'circle-fill')
+                'class' => 'flex-shrink-0 me-2 bi bi-' . ($visualElement->getIcon() ?? $options['icon'] ?? $this->getConfig('defaultIcon') ?? 'circle-fill')
             ]);
         }
         return '';
