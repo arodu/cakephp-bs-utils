@@ -4,176 +4,219 @@ declare(strict_types=1);
 
 namespace BsUtils\View\Helper;
 
-use BsUtils\Utility\BadgeInterface;
-use BsUtils\Utility\ColorInterface;
-use Cake\Utility\Hash;
+use App\Utility\VisualElement;
+use App\Utility\VisualElementInterface;
 use Cake\View\Helper;
-use Cake\View\View;
 
 /**
- * Bs helper
+ * App helper
  */
 class BsHelper extends Helper
 {
-    const CLASS_BG = 'bg';
-    const CLASS_BTN = 'btn';
-    const CLASS_TEXT = 'text';
-    const CLASS_CARD = 'card';
-    const CLASS_BORDER = 'border';
-
-    const BADGE_DEFAULT = 'badge';
-    const BADGE_PILL = 'badge-pill';
-
     /**
      * Default configuration.
      *
      * @var array<string, mixed>
      */
-    protected array $_defaultConfig = [];
-
-    protected array $helpers = ['Html', 'BsUtils.Menu'];
+    protected array $_defaultConfig = [
+        'defaultColor' => 'secondary',
+        'defaultTooltipPlacement' => 'top',
+        'defaultTooltip' => false,
+        'defaultIcon' => false,
+        'defaultIcon' => 'circle-fill',
+        'defaultPill' => false,
+    ];
 
     /**
-     * ### Options
-     * - `class`: Additional classes to add to the badge.
-     * - `tag`: The HTML tag to use for the badge. Default `span`.
-     *
-     * @param \Cake\View\View $View The View this helper is being attached to.
-     * @param array $config Configuration settings for the helper.
+     * @var array
      */
-    public function badge(BadgeInterface $badge, array $options = [])
-    {
-        $options = Hash::merge([
-            'class' => 'text-bg-' . $badge->color(),
-        ], $options);
+    protected array $helpers = ['Html'];
 
-        return $this->Html->badge($badge->text(), $options);
+    /**
+     * @param VisualElement|array $options
+     * @return VisualElement
+     */
+    public function visualElement(VisualElementInterface|array $element, array $options = []): VisualElement
+    {
+        if ($element instanceof VisualElementInterface) {
+            return $element->visualElement($options);
+        }
+
+        return new VisualElement(...$element);
     }
 
     /**
-     * ### Options
-     * - `class`: Additional classes to add to the badge.
+     * Generates a Bootstrap-styled badge element.
      *
-     * @param \BsUtils\Utility\BadgeInterface $badge
-     * @param array $options
-     * @return string
+     * ### $visualElement options:
+     * - `label` (string): The text to be displayed inside the badge.
+     * - `icon` (string): The icon to be displayed inside the badge.
+     * - `color` (string): The background color of the badge.
+     * - `description` (string): A description used as a tooltip or additional information.
+     *
+     * ### $options:
+     * - `class` (string): Additional CSS classes for the badge.
+     * - `tooltip` (string|bool): Tooltip placement (`top`, `bottom`, `start`, `end`) or `false` to disable it. Default is `top`.
+     * - `icon` (string|false): Overrides the default icon, or `false` to disable it.
+     * - `pill` (bool): Enables the pill style for the badge.
+     *
+     * @param \BsUtils\Utility\VisualElementInterface|array $visualElement The visual element object or an array of properties.
+     * @param array<string, mixed> $options Additional options for customizing the badge.
+     * @return string The generated HTML badge element.
      */
-    public function badgePill(BadgeInterface $badge, array $options = [])
+    public function badge(VisualElementInterface|array $visualElement, array $options = []): string
     {
-        return $this->badge($badge, Hash::merge($options, ['class' => 'badge-pill']));
+        $visualElement = $this->visualElement($visualElement);
+        $options += ['class' => 'badge'];
+        $options['class'] .= ' bg-' . ($visualElement->getColor() ?? $this->getConfig('defaultColor') ?? 'secondary');
+        $options['title'] = $visualElement->getDescription() ?? $visualElement->getLabel() ?? null;
+        $options['aria-label'] = $visualElement->getLabel() ?? '';
+
+        if ($options['pill'] ?? $this->getConfig('defaultPill') ?? false) {
+            $options['class'] .= ' badge-pill';
+        }
+
+        if ($options['tooltip'] ?? $this->getConfig('defaultTooltip') ?? false) {
+            $options = $this->tooltipOptions($visualElement, $options);
+            unset($options['tooltip']);
+        }
+
+        $icon = '';
+        if ($options['icon'] ?? $this->getConfig('defaultIcon') ?? false) {
+            $icon = $this->Html->tag('i', '', [
+                'class' => 'me-1 bi bi-' . ($visualElement->getIcon() ?? $options['icon'] ?? $this->getConfig('defaultIcon') ?? 'circle-fill')
+            ]);
+        }
+
+        return $this->Html->tag('span', $icon . $visualElement->getLabel(), $options);
     }
 
     /**
-     * ### Options
-     * - `class`: Additional classes to add to the badge.
-     *
-     * @param \BsUtils\Utility\BadgeInterface $badge
+     * @param VisualElementInterface|array $visualElement
      * @param array $options
      * @return string
      */
-    public function alert(string $message, ColorInterface $color, array $options = [])
+    public function text(VisualElementInterface|array $visualElement, array $options = []): string
     {
+        $visualElement = $this->visualElement($visualElement);
+        $options += ['class' => 'text-' . ($visualElement->getColor() ?? $this->getConfig('defaultColor') ?? 'secondary')];
+        $options['title'] = $visualElement->getDescription() ?? $visualElement->getLabel() ?? null;
+
+        if ($options['tooltip'] ?? $this->getConfig('defaultTooltip') ?? false) {
+            $options = $this->tooltipOptions($visualElement, $options);
+            unset($options['tooltip']);
+        }
+
+        $icon = '';
+        if ($options['icon'] ?? $this->getConfig('defaultIcon') ?? false) {
+            $icon = $this->Html->tag('i', '', [
+                'class' => 'me-1 bi bi-' . ($visualElement->getIcon() ?? $options['icon'] ?? $this->getConfig('defaultIcon') ?? 'circle-fill')
+            ]);
+        }
+
+        return $this->Html->tag('span', $icon . $visualElement->getLabel(), $options);
+    }
+
+    /**
+     * @param VisualElementInterface|array $visualElement
+     * @param array $options
+     * @return string
+     */
+    public function alert(VisualElementInterface|array $visualElement, array $options = []): string
+    {
+        $visualElement = $this->visualElement($visualElement);
+        $options += ['class' => 'alert'];
+        $options['class'] .= ' alert-' . ($visualElement->getColor() ?? $this->getConfig('defaultColor') ?? 'secondary');
+        $options['title'] = $visualElement->getDescription() ?? $visualElement->getLabel() ?? null;
+
+        $icon = '';
+        if ($options['icon'] ?? $this->getConfig('defaultIcon') ?? false) {
+            $icon = $this->Html->tag('i', '', [
+                'class' => 'me-1 bi bi-' . ($visualElement->getIcon() ?? $options['icon'] ?? $this->getConfig('defaultIcon') ?? 'circle-fill')
+            ]);
+        }
+
+        $closeButton = '';
         if (isset($options['dismissible']) && $options['dismissible']) {
-            $message .= $this->Html->tag(
-                'button',
-                null,
-                [
-                    'type' => 'button',
-                    'class' => 'btn-close',
-                    'data-bs-dismiss' => 'alert',
-                    'aria-label' => __('Close'),
-                ]
-            );
+            $closeButton = $this->Html->tag('button', null, [
+                'type' => 'button',
+                'class' => 'btn-close',
+                'data-bs-dismiss' => 'alert',
+                'aria-label' => __('Close'),
+            ]);
         }
 
-        return $this->Html->tag(
-            'div',
-            $message,
-            [
-                'class' => 'alert alert-' . $color,
-                'role' => 'alert',
-            ]
-        );
+        $header = $this->Html->tag('h4', $icon . $visualElement->getLabel(), ['class' => 'alert-heading']);
+        $content = $this->Html->tag('p', $visualElement->getDescription(), ['class' => 'mb-0']);
+
+        return $this->Html->tag('div', $closeButton . $header . $content, $options);
     }
 
     /**
-     * Undocumented function
-     *
-     * ### Options
-     * `tag`: The HTML tag to use for the badge. Default `span`.
-     * `class`: Additional classes to add to the badge.
-     * 'striped': Add striped class to the progress bar.
-     * 'animated': Add animated class to the progress bar.
-     * 
-     * @param integer $value
-     * @param integer $max
-     * @param ColorInterface|string|null $color
+     * @param VisualElementInterface|array $visualElement
      * @param array $options
-     * @return void
+     * @return string
      */
-    public function progress(int $value, int $max = 100, ColorInterface|string $color = null, array $options = [])
+    public function icon(VisualElementInterface|array $visualElement, array $options = []): string
     {
-        $options += [
-            'striped' => false,
-            'animated' => false,
-        ];
-
-        $classes = ['progress-bar'];
-        if ($options['striped']) {
-            $classes[] = 'progress-bar-striped';
-        }
-        if ($options['animated']) {
-            $classes[] = 'progress-bar-animated';
+        $visualElement = $this->visualElement($visualElement);
+        if (empty($visualElement->getIcon())) {
+            return '';
         }
 
-        $progressbar = $this->Html->tag('div', null, [
-            'class' => implode(' ', $classes),
-            'role' => 'progressbar',
-            'style' => 'width: ' . ($value / $max * 100) . '%',
-            'aria-valuenow' => $value,
-            'aria-valuemin' => 0,
-            'aria-valuemax' => $max,
-        ]);
+        $options += ['class' => 'bi'];
+        $options['class'] .= ' bi-' . $visualElement->getIcon();
+        $options['class'] .= ' text-' . ($visualElement->getColor() ?? $this->getConfig('defaultColor') ?? 'secondary');
+        $options['title'] = $visualElement->getDescription() ?? $visualElement->getLabel() ?? '';
 
-        return $this->Html->tag('div', $progressbar, ['class' => 'progress']);
+        if ($options['tooltip'] ?? $this->getConfig('defaultTooltip') ?? false) {
+            $options = $this->tooltipOptions($visualElement, $options);
+            unset($options['tooltip']);
+        }
+
+        return $this->Html->tag('i', '', $options);
     }
 
-    public function spinner(ColorInterface|string $color = null, array $options = [])
+    /**
+     * @param array<string> $tags
+     * @param array $options
+     * @return string
+     */
+    public function tags(array $tags, array $options = []): string
     {
-        $options += [
-            'size' => null,
-            'border' => null,
-        ];
-
-        $classes = ['spinner-border'];
-        if ($options['size']) {
-            $classes[] = 'spinner-border-' . $options['size'];
-        }
-        if ($options['border']) {
-            $classes[] = 'border-' . $options['border'];
+        $output = [];
+        $options += ['class' => 'badge bg-' . ($options['color'] ?? $this->getConfig('defaultColor') ?? 'secondary')];
+        foreach ($tags as $tag) {
+            $output[] = $this->Html->tag('span', $tag, $options);
         }
 
-        return $this->Html->tag(
-            'div',
-            null,
-            [
-                'class' => implode(' ', $classes),
-                'role' => 'status',
-            ]
-        );
+        return implode(' ', $output);
     }
 
-    public function dropdown(array $items, array $options = [])
+    /**
+     * @param VisualElement $visualElement
+     * @param array $options
+     * @return array
+     */
+    protected function tooltipOptions(VisualElement $visualElement, array $options = []): array
     {
         $options += [
-            'templates' => [
-                'menu' => '<ul class="dropdown-menu">{items}</ul>',
-                'item' => '<li class="dropdown-item">{link}</li>',
-                'itemWrapper' => '',
-                'nest' => '<ul class="dropdown-menu">{items}</ul>',
-            ],
+            'title' => $visualElement->getDescription() ?? $visualElement->getLabel(),
+            'aria-label' => $visualElement->getLabel(),
+            'data-bs-toggle' => 'tooltip',
+            'data-bs-placement' => $options['tooltip'] ?? $this->getConfig('defaultTooltipPlacement') ?? 'top',
         ];
 
-        return $this->Menu->render($items, $options);
+        return $options;
+    }
+
+    protected function renderIcon(VisualElement $visualElement, array $options): string
+    {
+        if ($options['icon'] ?? $this->getConfig('defaultIcon') ?? false) {
+            return $this->Html->tag('i', '', [
+                'class' => 'me-1 bi bi-' . ($visualElement->getIcon() ?? $options['icon'] ?? $this->getConfig('defaultIcon') ?? 'circle-fill')
+            ]);
+        }
+        return '';
     }
 }
